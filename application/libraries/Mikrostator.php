@@ -6,238 +6,158 @@ if (!defined('BASEPATH'))
  * Description of Mikrostator
  *
  * @author aviantorichad
+ * revision: 20180104/1811/mikrostator-2018
+ * 
+ * comm : menggunakan = read(parse=true), tidak pakai !done, !trap, dsb
  */
 require_once 'routeros_api.class.php';
 
 class Mikrostator Extends routeros_api {
 
+    private $mikrotik_host = "";
+    private $mikrotik_port = "";
+    private $mikrotik_username = "";
+    private $mikrotik_password = "";
+    
     //put your code here
-    public function __construct() {
-        session_start();
+    public function __construct($data = null) {
+        //...
     }
-
-    //http://www.moreofless.co.uk/using-native-php-sessions-with-codeigniter/
-    public function set($key, $value) {
-        $_SESSION[$key] = $value;
-    }
-
-    public function get($key) {
-        return isset($_SESSION[$key]) ? $_SESSION[$key] : null;
-    }
-
-    public function delete($key) {
-        unset($_SESSION[$key]);
-    }
-
-    function cekKoneksiRouter() {
-        try {
-            $host = $this->get('host');
-            $username = $this->get('username');
-            $password = $this->get('password');
-            $port = $this->get('port');
-            return $this->connect2($host, $username, $password, $port);
-        } catch (Exception $e) {
-            return "Error: " . $e;
-        }
-    }
-
-    function baca($command, array $param = null) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                return $this->comm($command, $param);
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
-        }
-    }
-
-    //alternatif menulis ke router
-    function tulis2($command, array $param = null) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                return $this->comm($command, $param);
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
-        }
-    }
-
-    function tulis($arr = array()) {
-        /*
-          $API->write('/ip/hotspot/user/set', false);
-          $API->write('=.id=' . $nama_sumber, false);
-          $API->write('=name=' . $nama_sumber, false);
-          $API->write('=limit-uptime=' . $sumber_batas);
-
-          $READ = $API->read(false);
-          $ARRAY = $API->parse_response($READ);
-         */
-        try {
-            if ($this->cekKoneksiRouter()) {
-                foreach ($arr as $k => $v) {
-                    //echo $k . "=" . $v;
-                    $this->write($k, $v);
-                }
-
-                $READ = $this->read(false);
-                return $ARRAY = $this->parse_response($READ);
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
-        }
+    
+    function konek($data){
+        $this->mikrotik_host = $data['mikrotik_host'];
+        $this->mikrotik_port = $data['mikrotik_port'];
+        $this->mikrotik_username = $data['mikrotik_username'];
+        $this->mikrotik_password = $data['mikrotik_password'];
+        return $this->connect2($this->mikrotik_host, $this->mikrotik_username, $this->mikrotik_password, $this->mikrotik_port);        
     }
 
     function disableIpHotspotUser($user) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $this->write('/ip/hotspot/user/print', false);
-                $this->write('=.proplist=.id', false);
-                $this->write('?name=' . $user);
+        if ($this->konek()) {
+            $this->write('/ip/hotspot/user/print', false);
+            $this->write('=.proplist=.id', false);
+            $this->write('?name=' . $user);
 
-                $A = $this->read();
-                $A = $A[0];
-                $this->write('/ip/hotspot/user/set', false);
-                $this->write('=.id=' . $A['.id'], false);
-                $this->write('=disabled=yes');
-                return $this->read();
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+            $A = $this->read();
+            $A = $A[0];
+            $this->write('/ip/hotspot/user/set', false);
+            $this->write('=.id=' . $A['.id'], false);
+            $this->write('=disabled=yes');
+            return $this->read();
         }
+        return false;
     }
 
     function enableIpHotspotUser($user) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $this->write('/ip/hotspot/user/print', false);
-                $this->write('=.proplist=.id', false);
-                $this->write('?name=' . $user);
+        if ($this->konek()) {
+            $this->write('/ip/hotspot/user/print', false);
+            $this->write('=.proplist=.id', false);
+            $this->write('?name=' . $user);
 
-                $A = $this->read();
-                $A = $A[0];
-                $this->write('/ip/hotspot/user/set', false);
-                $this->write('=.id=' . $A['.id'], false);
-                $this->write('=disabled=no');
-                return $this->read();
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+            $A = $this->read();
+            $A = $A[0];
+            $this->write('/ip/hotspot/user/set', false);
+            $this->write('=.id=' . $A['.id'], false);
+            $this->write('=disabled=no');
+            return $this->read();
         }
+        return false;
     }
 
     function addHotspotUser($data = array()) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $name = $data['user'];
-                $password = $data['password'];
-                $userprofile = $data['userprofile'];
-                $server = $data['server'];
+        if ($this->konek()) {
+            $name = $data['user'];
+            $password = $data['password'];
+            $userprofile = $data['userprofile'];
+            $server = $data['server'];
 
-                $this->write('/ip/hotspot/user/add', false);
-                $this->write('=name=' . $name, false);
-                $this->write('=password=' . $password, false);
-                $this->write('=profile=' . $userprofile, false);
-                $this->write('=server=' . $server);
-                $READ = $this->read(false);
-                //$ARRAY = $this->parse_response($READ);
-                return $READ;
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+            $this->write('/ip/hotspot/user/add', false);
+            $this->write('=name=' . $name, false);
+            $this->write('=password=' . $password, false);
+            $this->write('=profile=' . $userprofile, false);
+            $this->write('=server=' . $server);
+            $READ = $this->read(false);
+            //$ARRAY = $this->parse_response($READ);
+            return $READ;
         }
+        return false;
     }
 
     function editHotspotUser($data = array()) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $name = $data['user'];
-                $password = $data['password'];
-                $userprofile = $data['userprofile'];
+        if ($this->konek()) {
+            $name = $data['user'];
+            $password = $data['password'];
+            $userprofile = $data['userprofile'];
 
-                $this->write('/ip/hotspot/user/set', false);
-                $this->write('=.id=' . $name, false);
-                $this->write('=name=' . $name, false);
-                $this->write('=password=' . $password, false);
-                $this->write('=profile=' . $userprofile);
-                $READ = $this->read(false);
-                //$ARRAY = $this->parse_response($READ);
-                return $READ;
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+            $this->write('/ip/hotspot/user/set', false);
+            $this->write('=.id=' . $name, false);
+            $this->write('=name=' . $name, false);
+            $this->write('=password=' . $password, false);
+            $this->write('=profile=' . $userprofile);
+            $READ = $this->read(false);
+            //$ARRAY = $this->parse_response($READ);
+            return $READ;
         }
+        return false;
     }
 
     function monitoringHome() {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $this->set('hotspot_active', $this->comm('/ip/hotspot/active/print'));
-                $this->set('hotspot_log', $this->comm('/log/print'));
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+        if ($this->konek()) {
+            $this->set('hotspot_active', $this->comm('/ip/hotspot/active/print'));
+            $this->set('hotspot_log', $this->comm('/log/print'));
         }
     }
 
     function addHotspotUserVoucher($data = array()) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $name = $data['user'];
-                $password = $data['password'];
-                $userprofile = $data['userprofile'];
-                $limit_uptime = $data['limit_uptime'];
-                $comment = $data['comment'];
-                $server = $data['server'];
+        if ($this->konek()) {
+            $name = $data['user'];
+            $password = $data['password'];
+            $userprofile = $data['userprofile'];
+            $limit_uptime = $data['limit_uptime'];
+            $comment = $data['comment'];
+            $server = $data['server'];
 
-                $this->write('/ip/hotspot/user/add', false);
-                $this->write('=name=' . $name, false);
-                $this->write('=password=' . $password, false);
-                $this->write('=profile=' . $userprofile, false);
-                $this->write('=limit-uptime=' . $limit_uptime, false);
-                $this->write('=comment=' . $comment, false);
-                $this->write('=server=' . $server);
-                $READ = $this->read(false);
-                //$ARRAY = $this->parse_response($READ);
-                return $READ;
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+            $this->write('/ip/hotspot/user/add', false);
+            $this->write('=name=' . $name, false);
+            $this->write('=password=' . $password, false);
+            $this->write('=profile=' . $userprofile, false);
+            $this->write('=limit-uptime=' . $limit_uptime, false);
+            $this->write('=comment=' . $comment, false);
+            $this->write('=server=' . $server);
+            $READ = $this->read(false);
+            //$ARRAY = $this->parse_response($READ);
+            return $READ;
         }
+        return false;
     }
 
     function delHotspotUserByName($name) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $IPUser2 = $this->comm("/ip/hotspot/user/print", array(
-                    "?name" => $name,
-                ));
-                $ARRAY = $this->comm('/ip/hotspot/user/remove', array(
-                    ".id" => $IPUser2[0]['.id'],
-                ));
-                return $ARRAY;
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+        if ($this->konek()) {
+            $IPUser2 = $this->comm("/ip/hotspot/user/print", array(
+                "?name" => $name,
+            ));
+            $ARRAY = $this->comm('/ip/hotspot/user/remove', array(
+                ".id" => $IPUser2[0]['.id'],
+            ));
+            return $ARRAY;
         }
+        return false;
     }
-    
-    function restoreActive($data = array()) {
-        try {
-            if ($this->cekKoneksiRouter()) {
-                $user = $data['user'];
-                $batas_aktif = $data['batas_aktif'];
 
-                $this->write('/ip/hotspot/user/set',false);
-                $this->write('=.id='.$user ,false);
-                $this->write('=name='.$user ,false);
-                $this->write('=limit-uptime='.$batas_aktif);
-                $READ = $this->read(false);
-                //$ARRAY = $this->parse_response($READ);
-                return $READ;
-            }
-        } catch (Exception $e) {
-            return "Error: " . $e;
+    function restoreActive($data = array()) {
+        if ($this->konek()) {
+            $user = $data['user'];
+            $batas_aktif = $data['batas_aktif'];
+
+            $this->write('/ip/hotspot/user/set', false);
+            $this->write('=.id=' . $user, false);
+            $this->write('=name=' . $user, false);
+            $this->write('=limit-uptime=' . $batas_aktif);
+            $READ = $this->read(false);
+            //$ARRAY = $this->parse_response($READ);
+            return $READ;
         }
+        return false;
     }
 
 }

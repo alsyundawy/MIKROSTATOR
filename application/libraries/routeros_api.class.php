@@ -1,5 +1,6 @@
 <?php
-/*****************************
+
+/* * ***************************
  *
  * RouterOS PHP API class v1.6
  * Author: Denis Basta
@@ -12,10 +13,11 @@
  * http://www.mikrotik.com
  * http://wiki.mikrotik.com/wiki/API_PHP_class
  *
- ******************************/
+ * **************************** */
 
-class routeros_api
-{
+// ini_set('memory_limit', '1024M'); // or you could use 1G
+class routeros_api {
+
     var $debug = false;      // Show debug information
     var $error_no;           // Variable for storing connection error number, if any
     var $error_str;          // Variable for storing connection error text, if any
@@ -27,16 +29,12 @@ class routeros_api
     var $socket;             // Variable for storing socket resource
 
     /* Check, can be var used in foreach  */
-    function is_iterable($var)
-    {
-        return $var !== null
-                && (is_array($var)
-                || $var instanceof Traversable
-                || $var instanceof Iterator
-                || $var instanceof IteratorAggregate
+
+    function is_iterable($var) {
+        return $var !== null && (is_array($var) || $var instanceof Traversable || $var instanceof Iterator || $var instanceof IteratorAggregate
                 );
     }
-    
+
     /**
      * Print text for debug purposes
      *
@@ -44,13 +42,11 @@ class routeros_api
      *
      * @return void
      */
-    function debug($text)
-    {
+    function debug($text) {
         if ($this->debug)
             echo $text . "\n";
     }
-	
-	
+
     /**
      * 
      *
@@ -58,8 +54,7 @@ class routeros_api
      *
      * @return void
      */
-    function encode_length($length)
-    {
+    function encode_length($length) {
         if ($length < 0x80) {
             $length = chr($length);
         } else if ($length < 0x4000) {
@@ -75,8 +70,7 @@ class routeros_api
             $length = chr(0xF0) . chr(($length >> 24) & 0xFF) . chr(($length >> 16) & 0xFF) . chr(($length >> 8) & 0xFF) . chr($length & 0xFF);
         return $length;
     }
-	
-	
+
     /**
      * Login to RouterOS
      *
@@ -86,8 +80,7 @@ class routeros_api
      *
      * @return boolean                If we are connected or not
      */
-    function connect($ip, $login, $password)
-    {
+    function connect($ip, $login, $password) {
         for ($ATTEMPT = 1; $ATTEMPT <= $this->attempts; $ATTEMPT++) {
             $this->connected = false;
             $this->debug('Connection attempt #' . $ATTEMPT . ' to ' . $ip . ':' . $this->port . '...');
@@ -121,8 +114,7 @@ class routeros_api
             $this->debug('Error...');
         return $this->connected;
     }
-    
-    
+
     /**
      * Login to RouterOS
      *
@@ -134,8 +126,7 @@ class routeros_api
      * 
      * for spesific port
      */
-    function connect2($ip, $login, $password, $portx)
-    {
+    function connect2($ip, $login, $password, $portx = '8728') {
         for ($ATTEMPT = 1; $ATTEMPT <= $this->attempts; $ATTEMPT++) {
             $this->connected = false;
             $this->debug('Connection attempt #' . $ATTEMPT . ' to ' . $ip . ':' . $portx . '...');
@@ -144,22 +135,27 @@ class routeros_api
                 socket_set_timeout($this->socket, $this->timeout);
                 $this->write('/login');
                 $RESPONSE = $this->read(false);
+                // modif by @aviantorichad - 20180106 (untuk njagani kalau response tidak ada)
+                if(count($RESPONSE) == 0){
+                    return $this->connected;
+                }
                 if ($RESPONSE[0] == '!done') {
                     $MATCHES = array();
-                    if (preg_match_all('/[^=]+/i', $RESPONSE[1], $MATCHES)) {
+                    if (@preg_match_all('/[^=]+/i', $RESPONSE[1], $MATCHES)) { // terpaksa di supres @preg_match_all (sebelumnya preg_match_all) agar noticenya hilang by @aviantorichad - 20180106
                         if ($MATCHES[0][0] == 'ret' && strlen($MATCHES[0][1]) == 32) {
+
                             $this->write('/login', false);
                             $this->write('=name=' . $login, false);
                             $this->write('=response=00' . md5(chr(0) . $password . pack('H*', $MATCHES[0][1])));
                             $RESPONSE = $this->read(false);
-                            if ($RESPONSE[0] == '!done') {
+                            if (@$RESPONSE[0] == '!done') {
                                 $this->connected = true;
                                 break;
                             }
                         }
                     }
                 }
-                fclose($this->socket);
+//                fclose($this->socket);
             }
             sleep($this->delay);
         }
@@ -169,21 +165,18 @@ class routeros_api
             $this->debug('Error...');
         return $this->connected;
     }
-	
-	
+
     /**
      * Disconnect from RouterOS
      *
      * @return void
      */
-    function disconnect()
-    {
+    function disconnect() {
         fclose($this->socket);
         $this->connected = false;
         $this->debug('Disconnected...');
     }
-	
-	
+
     /**
      * Parse response from Router OS
      *
@@ -191,30 +184,29 @@ class routeros_api
      *
      * @return array                  Array with parsed data
      */
-    function parse_response($response)
-    {
+    function parse_response($response) {
         if (is_array($response)) {
-            $PARSED      = array();
-            $CURRENT     = null;
+            $PARSED = array();
+            $CURRENT = null;
             $singlevalue = null;
             foreach ($response as $x) {
                 if (in_array($x, array(
-                    '!fatal',
-                    '!re',
-                    '!trap'
-                ))) {
+                            '!fatal',
+                            '!re',
+                            '!trap'
+                        ))) {
                     if ($x == '!re') {
-                        $CURRENT =& $PARSED[];
+                        $CURRENT = & $PARSED[];
                     } else
-                        $CURRENT =& $PARSED[$x][];
+                        $CURRENT = & $PARSED[$x][];
                 } else if ($x != '!done') {
                     $MATCHES = array();
                     if (preg_match_all('/[^=]+/i', $x, $MATCHES)) {
                         if ($MATCHES[0][0] == 'ret') {
                             $singlevalue = $MATCHES[0][1];
                         }
-						$CURRENT[$MATCHES[0][0]] = (isset($MATCHES[0][1]) ? $MATCHES[0][1] : '');
-					}
+                        $CURRENT[$MATCHES[0][0]] = (isset($MATCHES[0][1]) ? $MATCHES[0][1] : '');
+                    }
                 }
             }
             if (empty($PARSED) && !is_null($singlevalue)) {
@@ -224,8 +216,7 @@ class routeros_api
         } else
             return array();
     }
-	
-	
+
     /**
      * Parse response from Router OS
      *
@@ -233,22 +224,21 @@ class routeros_api
      *
      * @return array                  Array with parsed data
      */
-    function parse_response4smarty($response)
-    {
+    function parse_response4smarty($response) {
         if (is_array($response)) {
-            $PARSED  = array();
+            $PARSED = array();
             $CURRENT = null;
             $singlevalue = null;
             foreach ($response as $x) {
                 if (in_array($x, array(
-                    '!fatal',
-                    '!re',
-                    '!trap'
-                ))) {
+                            '!fatal',
+                            '!re',
+                            '!trap'
+                        ))) {
                     if ($x == '!re')
-                        $CURRENT =& $PARSED[];
+                        $CURRENT = & $PARSED[];
                     else
-                        $CURRENT =& $PARSED[$x][];
+                        $CURRENT = & $PARSED[$x][];
                 } else if ($x != '!done') {
                     $MATCHES = array();
                     if (preg_match_all('/[^=]+/i', $x, $MATCHES)) {
@@ -256,7 +246,7 @@ class routeros_api
                             $singlevalue = $MATCHES[0][1];
                         }
                         $CURRENT[$MATCHES[0][0]] = (isset($MATCHES[0][1]) ? $MATCHES[0][1] : '');
-					}
+                    }
                 }
             }
             foreach ($PARSED as $key => $value) {
@@ -270,8 +260,7 @@ class routeros_api
             return array();
         }
     }
-	
-	
+
     /**
      * Change "-" and "/" from array key to "_"
      *
@@ -279,8 +268,7 @@ class routeros_api
      *
      * @return array                  Array with changed key names
      */
-    function array_change_key_name(&$array)
-    {
+    function array_change_key_name(&$array) {
         if (is_array($array)) {
             foreach ($array as $k => $v) {
                 $tmp = str_replace("-", "_", $k);
@@ -296,8 +284,7 @@ class routeros_api
             return $array;
         }
     }
-	
-	
+
     /**
      * Read data from Router OS
      *
@@ -305,20 +292,20 @@ class routeros_api
      *
      * @return array                  Array with parsed or unparsed data
      */
-    function read($parse = true)
-    {
+    function read($parse = true) {
         $RESPONSE = array();
         $receiveddone = false;
         while (true) {
             // Read the first byte of input which gives us some or all of the length
             // of the remaining reply.
-            $BYTE   = ord(fread($this->socket, 1));
+            $BYTE = ord(fread($this->socket, 1));
             $LENGTH = 0;
             // If the first bit is set then we need to remove the first four bits, shift left 8
             // and then read another byte in.
             // We repeat this for the second and third bits.
             // If the fourth bit is set, we need to remove anything left in the first byte
             // and then read in yet another byte.
+
             if ($BYTE & 128) {
                 if (($BYTE & 192) == 128) {
                     $LENGTH = (($BYTE & 63) << 8) + ord(fread($this->socket, 1));
@@ -343,8 +330,8 @@ class routeros_api
                 $LENGTH = $BYTE;
             }
             // If we have got more characters to read, read them in.
+            $_ = "";
             if ($LENGTH > 0) {
-                $_      = "";
                 $retlen = 0;
                 while ($retlen < $LENGTH) {
                     $toread = $LENGTH - $retlen;
@@ -367,8 +354,7 @@ class routeros_api
             $RESPONSE = $this->parse_response($RESPONSE);
         return $RESPONSE;
     }
-	
-	
+
     /**
      * Write (send) data to Router OS
      *
@@ -380,8 +366,7 @@ class routeros_api
      *
      * @return boolean                Return false if no command especified
      */
-    function write($command, $param2 = true)
-    {
+    function write($command, $param2 = true) {
         if ($command) {
             $data = explode("\n", $command);
             foreach ($data as $com) {
@@ -398,8 +383,7 @@ class routeros_api
         } else
             return false;
     }
-	
-	
+
     /**
      * Write (send) data to Router OS
      *
@@ -408,8 +392,7 @@ class routeros_api
      *
      * @return array                  Array with parsed
      */
-    function comm($com, $arr = array())
-    {
+    function comm($com, $arr = array()) {
         $count = count($arr);
         $this->write($com, !$arr);
         $i = 0;
@@ -433,5 +416,7 @@ class routeros_api
         }
         return $this->read();
     }
+
 }
+
 ?>
