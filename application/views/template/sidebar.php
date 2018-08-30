@@ -29,6 +29,7 @@
                     </span>
                 </a>
                 <ul class="treeview-menu">
+                    <li><a href="javascript:void(0)" id="menu-voucher-profile"><i class="fa fa-circle-o"></i> <span>Voucher Profile</span></a></li>
                     <li><a href="javascript:void(0)" id="menu-voucher-list"><i class="fa fa-circle-o"></i> <span>Voucher List</span></a></li>
                 </ul>
             </li>
@@ -43,6 +44,8 @@
                 </a>
                 <ul class="treeview-menu">
                     <li><a href="javascript:void(0)" id="menu-form-billing"><i class="fa fa-circle-o"></i> <span>Add Billing</span></a></li>
+                    <li><a href="javascript:void(0)" id="menu-form-billing-n-report"><i class="fa fa-circle-o"></i> <span>Billing + Report</span></a></li>
+                    <li><a href="javascript:void(0)" id="menu-form-billing-add-user-hotspot"><i class="fa fa-circle-o"></i> <span>Add User Hotspot</span></a></li>
                 </ul>
             </li>
 
@@ -338,7 +341,6 @@
                                 <li>Bootstrap 3.3.7</li>
                                 <li>AdminLTE v2.4.0</li>
                                 <li>jQuery v3.2.1</li>
-                                <li>SQLite</li>
                             </ul>
                             <hr>
 

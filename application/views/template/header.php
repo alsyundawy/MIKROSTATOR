@@ -13,6 +13,7 @@
         <!-- Font Awesome -->
         <link rel="stylesheet" href="<?= base_url('assets/font-awesome/css/font-awesome.min.css') ?>">
         <!-- Theme style -->
+        <link rel="stylesheet" href="<?= base_url('assets/css/select2.min.css') ?>" />
         <link rel="stylesheet" href="<?= base_url('assets/css/AdminLTE.min.css') ?>">
         <link rel="stylesheet" href="<?= base_url('assets/css/skin-green.min.css') ?>">
         <!-- DataTables -->
@@ -25,6 +26,8 @@
         <link rel="stylesheet" href="<?= base_url('assets/css/bootstrap3-wysihtml5.min.css') ?>">
 
 
+
+
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
         <!--[if lt IE 9]>
@@ -34,10 +37,14 @@
 
         <style>
             .content-wrapper {
-                background-color: #f9f9f9;
+                background-color: #222d32;
+                
             }
             .dropdown-menu{
                 z-index:2002;
+            }
+            .main-sidebar {
+                box-shadow: 2px 0px 5px #000;
             }
 
         </style>
@@ -88,13 +95,14 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <!-- User image -->
-                                    <li class="user-header">
-                                        <img src="<?= base_url('favicon.png') ?>" class="img-circle" alt="User Image">
+                                    <li class="user-header" style="cursor: pointer;">
+                                        <img src="<?= base_url('favicon.png') ?>" id="btn_user_login" class="img-circle" alt="User Image">
 
                                         <p>
                                             <?= $this->session->userdata('user_full_name') ?>
                                             <small>Hello bro!</small>
                                         </p>
+                                        <label style="color: #fff"><input type="checkbox" checked id="app_multiview"> Multiview</label>
                                     </li>
                                     <!-- Menu Body -->
                                     <li class="user-body" style="display:none">
@@ -120,9 +128,77 @@
                                             <a href="javascript:void(0)" class="btn btn-default btn-flat" id="logout">Del all Sessions</a>
                                         </div>
                                     </li>
+                                    <li class="user-footer">
+                                        <div>
+                                            <a href="<?=site_url('/logout')?>" onclick="return confirm('Are you sure?')" class="btn btn-danger btn-block" id="logout-one"><i class="fa fa-power-off"></i> Logout</a>
+                                        </div>
+                                    </li>
                                 </ul>
                             </li>
                         </ul>
                     </div>
                 </nav>
             </header>
+
+        <!-- Modal user_login Config.begin -->
+        <div class="modal fade" id="user_login_config_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            User Login
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="save_user_login_config">Save changes</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal user_login Config.end -->
+<script>
+    $(document).ready(function(){
+        $('#btn_user_login').on('click', function () {
+            $('#user_login_config_modal').modal('show');
+            $('#user_login_config_modal .modal-body').html(loadingBar);
+            window['user_login_config_modal'] = $.ajax({
+                url: "<?= site_url('home/modal_user_login_config') ?>/<?= $session_id ?>",
+                success: function (data) {
+                    $('#user_login_config_modal .modal-body').html(data);
+                },
+                error: function (xhr) {
+                    console.log(xhr);
+                    var msgError = 'Request Status: ' + xhr.status + ' Status Text: ' + xhr.statusText + ' ' + xhr.responseText;
+                    alert(msgError);
+                    $('#user_login_config_modal .modal-body').html(msgError);
+                }
+            });
+        });
+        $('#save_user_login_config').on('click', function () {
+            var formData = {
+                "input_user_login_config": $('#input_user_login_config').val()
+            }
+            // $('#user_login_config_modal .modal-body .notifikasi').html(loadingBar);
+            window['user_login_config'] = $.ajax({
+            url: "<?= site_url('home/save_user_login_to_file') ?>/<?= $session_id ?>",
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    // $('#user_login_config_modal .modal-body .notifikasi').html(data);
+                    var obj = JSON.parse(data);
+                    alert(obj.msg);
+                },
+                error: function (xhr) {
+                    console.log(xhr);
+                    var msgError = 'Request Status: ' + xhr.status + ' Status Text: ' + xhr.statusText + ' ' + xhr.responseText;
+                    // $('#user_login_config_modal .modal-body .notifikasi').html(msgError);
+                    alert(msgError);
+                }
+            });
+        });
+    });
+    </script>

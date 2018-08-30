@@ -1,7 +1,7 @@
 <!-- /.content-wrapper -->
 <footer class="main-footer">
     <div class="pull-right hidden-xs">
-        <b>Version</b> 1.0.3
+        <b>Version</b> 1.3.0
     </div>
     <strong>Copyright &copy; 2018 <a href="javascript:void(0)">MIKROSTATOR</a>.</strong> All rights reserved.
 </footer>
@@ -39,5 +39,7 @@
 <script src="<?= base_url('assets/js/buttons.colVis.min.js') ?>"></script>
 <script src="<?= base_url('assets/js/buttons.bootstrap.min.js') ?>"></script>
 <script src="<?= base_url('assets/js/bootstrap3-wysihtml5.all.min.js') ?>"></script>
+<script src="<?= base_url('assets/js/select2.full.min.js') ?>"></script>
+
 </body>
 </html>

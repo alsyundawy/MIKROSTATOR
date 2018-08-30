@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Mt_others extends MY_Controller {
+class Mt_others extends Admin_Controller {
 
     public function __construct() {
         parent::__construct();
@@ -9,6 +9,7 @@ class Mt_others extends MY_Controller {
 
         $this->load->model('stator_model');
         $this->load->model('rich_model');
+        $this->load->model('report_model');
     }
 
     public function dashboard($session_id, $cmd = "") {
@@ -304,6 +305,9 @@ class Mt_others extends MY_Controller {
                 [ { "name":"LAPTOP", "value":"pc", "price":"2500" }, { "name": "HP", "value": "hp", "price":"2000" }, { "name": "GADGET MAHAL", "value": "gm", "price":"20000" }]
         */
         ?>
+        <div class="box no-border" style="background-color: #2c3b41; color: #ddd;">
+            <div class="box-body">
+
         <div class="row">
                 <!-- /.col -->
             <div class="col-xs-12">
@@ -317,7 +321,7 @@ class Mt_others extends MY_Controller {
                 <form autocomplete="off">
                     <div class="form-group">
                         <label class="control-label">User:</label>
-                        <select class="form-control" id="billing_user-<?= $session_id ?>" onchange="return false;$('#user_detail-<?= $session_id ?>').html('limit-uptime: ' + $('option:selected', $(this)).data('limituptime'),)">
+                        <select class="form-control input-lg select2" id="billing_user-<?= $session_id ?>" onchange="return false;$('#user_detail-<?= $session_id ?>').html('limit-uptime: ' + $('option:selected', $(this)).data('limituptime'),)" style="border-color: #dd4b39;">
                             <option value="*">-- select user --</option>
                         </select>
                         <!-- <span class="help-block text-right" id="user_detail-<?= $session_id ?>"></span> -->
@@ -325,21 +329,21 @@ class Mt_others extends MY_Controller {
                     
                     <div class="form-group">
                         <label class="control-label">Type:</label>
-                        <select class="form-control" id="billing_type-<?= $session_id ?>" onchange="$(this).val()=='tr'?$('#frm_billing_user2-<?= $session_id ?>').show():$('#frm_billing_user2-<?= $session_id ?>').hide()">
+                        <select class="form-control select2" id="billing_type-<?= $session_id ?>" onchange="$(this).val()=='tr'?$('#frm_billing_user2-<?= $session_id ?>').show():$('#frm_billing_user2-<?= $session_id ?>').hide()" style="border-color: #009abf;">
                             <option value="*">-- select type --</option>
                         </select>
                     </div>
 
                     <div class="form-group" id="frm_billing_user2-<?= $session_id ?>" style="display:none;">
                         <label class="control-label">Sender:</label>
-                        <select class="form-control" id="billing_user2-<?= $session_id ?>" onchange="$(this).val()==$('#billing_user-<?= $session_id ?>').val()?($(this).val('*'),alert('Sender can not same with User.')):null">
+                        <select class="form-control" id="billing_user2-<?= $session_id ?>" onchange="$(this).val()==$('#billing_user-<?= $session_id ?>').val()?($(this).val('*'),alert('Sender can not same with User.')):null" style="border-color: #f39c12;">
                             <option value="*">-- select sender --</option>
                         </select>
                     </div>
                     
                     <div class="form-group" style="display:none;">
                         <label class="control-label">Time or Money:</label>
-                        <select class="form-control" id="billing_tom-<?= $session_id ?>">
+                        <select class="form-control select2" id="billing_tom-<?= $session_id ?>">
                             <option value="*">-- select time or money --</option>
                             <option value="money">MONEY</option>
                             <option value="time">TIME</option>
@@ -358,6 +362,8 @@ class Mt_others extends MY_Controller {
                 </form>
             </div>
             <!-- /.col -->
+        </div>
+            </div>
         </div>
 
         <!-- Modal Billing Config.begin -->
@@ -383,6 +389,12 @@ class Mt_others extends MY_Controller {
 
         <script>
         $(document).ready(function(){
+
+            $('.select2').select2({
+                // allowClear: true
+            });
+
+
             $('#billing_config-<?= $session_id ?>').on('click', function () {
                 $('#billing_config_modal-<?= $session_id ?>').modal('show');
                 $('#billing_config_modal-<?= $session_id ?> .modal-body').html(loadingBar);
@@ -439,14 +451,15 @@ class Mt_others extends MY_Controller {
                                     .append($("<option></option>")
                                             .attr("value", '*')
                                             .text('-- select user ('+billing_user.length+') --'));
-                                    $.each(billing_user, function (key, value) {
-                                        var limitUptime = value['limit-uptime']== null?'~':value['limit-uptime'];
-                                        $('#billing_user-<?= $session_id ?>')
-                                                .append($("<option></option>")
-                                                        .attr("value", value['.id'])
-                                                        .attr("data-pass", value['password'])
-                                                        .attr("data-limituptime", value['limit-uptime'])
-                                                        .text(value.name + ' (' + limitUptime +')'));
+                            
+                            $.each(billing_user, function (key, value) {
+                                var limitUptime = value['limit-uptime']== null?'~':value['limit-uptime'];
+                                $('#billing_user-<?= $session_id ?>')
+                                        .append($("<option></option>")
+                                                .attr("value", value['.id'])
+                                                .attr("data-pass", value['password'])
+                                                .attr("data-limituptime", value['limit-uptime'])
+                                                .text(value.name + ' (' + limitUptime +')'));
                         });
                         
                         $('#billing_user2-<?= $session_id ?> option').remove();
@@ -466,25 +479,31 @@ class Mt_others extends MY_Controller {
 
                         //billing type.begin
                         // console.log(JSON.parse(obj.data.billing_type[0]['source']));
-                        var billing_type = JSON.parse(obj.data.billing_type[0]['source']);
-                        
                         $('#billing_type-<?= $session_id ?> option').remove();
                             $('#billing_type-<?= $session_id ?>')
                                     .append($("<option></option>")
                                             .attr("value", '*')
                                             .text('-- select type --'));
-                            $.each(billing_type, function (key, value) {
-                                $('#billing_type-<?= $session_id ?>')
-                                        .append($("<option></option>")
-                                                .attr("value", value['value'])
-                                                .attr("data-price", value['price'])
-                                                .text(value['name'] + ' ('+value['price']+'/h)'));
-                            });
-                            $('#billing_type-<?= $session_id ?>')
-                                    .append($("<option></option>")
-                                            .attr("value", 'tr')
-                                            .attr("data-price", '0')
-                                            .text('TRANSFER MINUTE(s)'));
+                                            
+                        if(obj.data.billing_type[0]['source'] != "") {
+                            var billing_type = JSON.parse(obj.data.billing_type[0]['source']);
+
+
+                            if(billing_type.length > 0) {
+                                $.each(billing_type, function (key, value) {
+                                    $('#billing_type-<?= $session_id ?>')
+                                            .append($("<option></option>")
+                                                    .attr("value", value['value'])
+                                                    .attr("data-price", value['price'])
+                                                    .text(value['name'] + ' ('+value['price']+'/h)'));
+                                });
+                            }
+                        }
+                        $('#billing_type-<?= $session_id ?>')
+                                .append($("<option></option>")
+                                        .attr("value", 'tr')
+                                        .attr("data-price", '0')
+                                        .text('TRANSFER MINUTE(s)'));
                         //billing type.end
 
 
@@ -592,7 +611,7 @@ class Mt_others extends MY_Controller {
                 if (rumus == 'pwd') {
                     var pwd = $('option:selected', $('#billing_user-<?= $session_id ?>')).data('pass');
                     console.log($('option:selected', $('#billing_user-<?= $session_id ?>')).data('pass'));
-                    $("#rumus_result").html('<div style="color:#b30000;text-align:right">password= </span><span style="color:#009988;font-weight:bold;">' + pwd + '</div>');
+                    $("#rumus_result").html('<div style="color:#f77;text-align:right">password=</span><span style="color:orange;font-weight:bold;">' + pwd + '</div>');
                     return false;
                 }
                 var hasil = rumus;
@@ -600,7 +619,7 @@ class Mt_others extends MY_Controller {
                     hasil = eval(rumus);
                 }
                 if (rumus != '') {
-                    $("#rumus_result").html('<div style="color:#b30000;text-align:right">' + rumus + '=</span><span style="color:#009988;font-weight:bold;">' + hasil + '</div>');
+                    $("#rumus_result").html('<div style="color:#f77;text-align:right">' + rumus + '=</span><span style="color:orange;font-weight:bold;">' + hasil + '</div>');
                 }
             } else {
                 $("#rumus_result").html('');
@@ -616,6 +635,19 @@ class Mt_others extends MY_Controller {
             }
         }
         </script>
+        <?php
+    }
+
+    public function form_billing_n_report($session_id, $cmd = "") {
+        ?>
+        <div class="row">
+            <div class="col-md-4">
+                <?php echo $this->form_billing($session_id, $cmd); ?>
+            </div>
+            <div class="col-md-8" id="form_billing_n_report_report">
+                <?php echo $this->report_model->get_selling($session_id, $cmd); ?>
+            </div>
+        </div>
         <?php
     }
 
@@ -638,9 +670,9 @@ class Mt_others extends MY_Controller {
                     <label>List Type:</label>
                     <input type="hidden" id="billing_config_list_type_exist-<?=$session_id?>" value="<?=count($array_script)?>"/>
                     <input type="hidden" id="billing_config_list_type_id-<?=$session_id?>" value="<?= isset($list_script['.id']) ? $list_script['.id'] : '' ?>"/>
-                    <textarea id="billing_config_list_type-<?=$session_id?>" class="form-control" rows="4"><?= isset($list_script['source']) ? $list_script['source'] : '' ?></textarea>
+                    <textarea id="billing_config_list_type-<?=$session_id?>" class="form-control" rows="15"><?= isset($list_script['source']) ? json_encode(json_decode($list_script['source']), JSON_PRETTY_PRINT) : '' ?></textarea>
                     <textarea id="billing_config_list_type_default-<?=$session_id?>" class="form-control" rows="4" style="display: none;">[{ "name":"LAPTOP", "value":"pc", "price":"2500" }, { "name": "HP", "value": "hp", "price":"2000" }, { "name": "GADGET MAHAL", "value": "gm", "price":"20000" }]</textarea>
-                    <small class="help-block" id="help-session-list"><i class="fa fa-info-circle"></i> don't use enter. what is this? <a href="javascript:void(0)" onclick="$('#billing_config_list_type-<?=$session_id?>').val($('#billing_config_list_type_default-<?=$session_id?>').val())">load example</a></small>
+                    <small class="help-block" id="help-session-list"><i class="fa fa-info-circle"></i> don't use enter. what is this? <a href="javascript:void(0)" onclick="$('#billing_config_list_type-<?=$session_id?>').val(JSON.stringify(JSON.parse($('#billing_config_list_type_default-<?=$session_id?>').val()), null, '\t'))">load example</a></small>
                 </div>
             </form>
         <?php
@@ -659,6 +691,34 @@ class Mt_others extends MY_Controller {
         $API = new $this->mikrostator();
         $output = array("data" => array());
         if ($API->konek($koneksi)) {
+
+            //get type list.begin
+            $array = $API->comm('/system/script/print', array(
+                "?name" => "mikrostator_list_type"
+            ));
+            // $array = $API->comm('/system/script/print');
+            if (isset($array['!trap'])) {
+                // trap
+                $msg_list = "";
+                foreach ($array['!trap'][0] as $key => $val):
+                    $msg_list .= $key . ': ' . $val . '\n';
+                endforeach;
+                $msg = '<span style="cursor:pointer" onclick="alert(\'' . $msg_list . '\')">Error, click for detail!</span>';
+                $output['error_msg'] = $msg;
+                echo json_encode($output, JSON_PRETTY_PRINT);
+                return false;
+            }
+            if (count($array) == 0) {
+                // no data
+                $output['error_msg'] = 'No Data!';
+                echo json_encode($output, JSON_PRETTY_PRINT);
+                return false;
+            }
+            ?>
+            <?php
+            $output['data']['billing_type'] = $array;
+            $output['error_msg']['billing_type'] = "";
+            //get type list.end
 
             //get user list.begin
             $array = $API->comm('/ip/hotspot/user/print');
@@ -687,35 +747,6 @@ class Mt_others extends MY_Controller {
             ?>
 
 
-            <?php
-            //get type list.begin
-            $array = $API->comm('/system/script/print', array(
-                "?name" => "mikrostator_list_type"
-            ));
-            // $array = $API->comm('/system/script/print');
-            if (isset($array['!trap'])) {
-                // trap
-                $msg_list = "";
-                foreach ($array['!trap'][0] as $key => $val):
-                    $msg_list .= $key . ': ' . $val . '\n';
-                endforeach;
-                $msg = '<span style="cursor:pointer" onclick="alert(\'' . $msg_list . '\')">Error, click for detail!</span>';
-                $output['error_msg'] = $msg;
-                echo json_encode($output, JSON_PRETTY_PRINT);
-                return false;
-            }
-            if (count($array) == 0) {
-                // no data
-                $output['error_msg'] = 'No Data!';
-                echo json_encode($output, JSON_PRETTY_PRINT);
-                return false;
-            }
-            ?>
-            <?php
-            $output['data']['billing_type'] = $array;
-            $output['error_msg']['billing_type'] = "";
-            //get type list.end
-            ?>
             <?php
             $output['error_msg'] = "";
             echo json_encode($output, JSON_PRETTY_PRINT);

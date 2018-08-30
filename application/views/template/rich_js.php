@@ -124,9 +124,24 @@
             addSection(menuName, 'menu-form-billing');
         });
 
+        $('#menu-form-billing-n-report').on('click', function () {
+            var menuName = $(this).text();
+            addSection(menuName, 'menu-form-billing-n-report');
+        });
+
+        $('#menu-form-billing-add-user-hotspot').on('click', function () {
+            var menuName = $(this).text();
+            addSection(menuName, 'menu-hotspot-user');
+        });
+
         $('#menu-voucher-list').on('click', function () {
             var menuName = $(this).text();
             addSection(menuName, 'menu-voucher-list');
+        });
+
+        $('#menu-voucher-profile').on('click', function () {
+            var menuName = $(this).text();
+            addSection(menuName, 'menu-hotspot-user-profile');
         });
 
         $('#menu-dns-cache').on('click', function () {
@@ -199,7 +214,8 @@
         $('#reload-session-list').on('click', function () {
             $('#help-session-list').html('loading...');
             reqAjax = $.ajax({
-                url: "<?= site_url('home/get_session_logins') ?>",
+                // url: "<?= site_url('home/get_session_logins') ?>",
+                url: "<?= site_url('home/get_session_logins_from_file') ?>",
                 type: 'POST',
                 success: function (data) {
                     var obj = JSON.parse(data);
@@ -238,7 +254,7 @@
                 return false;
             }
             reqAjax = $.ajax({
-                url: "<?= site_url('home/is_security_mikrotik') ?>",
+                url: "<?= site_url('home/is_security_mikrotik_from_file') ?>",
                 type: 'POST',
                 data: {'id': $('#session-list').val()},
                 success: function (data) {
@@ -266,7 +282,7 @@
 
                         if (pin != null || pin != "" || typeof pin != 'undefined') {
                             reqAjax = $.ajax({
-                                url: "<?= site_url('home/check_security_mikrotik') ?>",
+                                url: "<?= site_url('home/check_security_mikrotik_from_file') ?>",
                                 type: 'POST',
                                 data: {
                                     'id': $('#session-list').val(),
@@ -310,7 +326,7 @@
         
         function useSession() {
             reqAjax = $.ajax({
-                url: "<?= site_url('home/get_session_login_by_id') ?>",
+                url: "<?= site_url('home/get_session_login_by_id_from_file') ?>",
                 type: 'POST',
                 data: {'id': $('#session-list').val()},
                 success: function (data) {
@@ -341,7 +357,7 @@
             }
             if (confirm('Are you sure?')) {
                 reqAjax = $.ajax({
-                    url: "<?= site_url('home/del_session_list_by_id') ?>",
+                    url: "<?= site_url('home/del_session_list_by_id_from_file') ?>",
                     type: 'POST',
                     data: {'id': $('#session-list').val()},
                     success: function (data) {
@@ -403,7 +419,7 @@
                 "security_pin": $('#security-pin').val()
             }
             reqAjax = $.ajax({
-                url: "<?= site_url('home/save_session') ?>",
+                url: "<?= site_url('home/save_session_to_file') ?>",
                 type: 'POST',
                 data: formData,
                 success: function (data) {
@@ -565,7 +581,11 @@
                                 alert('Session not found!\nRefresh your browser now!');
                                 return false;
                             }
-                            $('#mikrostator-section').prepend(data);
+                            if($('#app_multiview').prop('checked')){
+                                $('#mikrostator-section').prepend(data);
+                            } else {
+                                $('#mikrostator-section').html(data);
+                            }
                             $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-header h3').html(menuName);
                             $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-header small').html(itemText);
                             runCmdMikrotik(itemValue, cmd);
@@ -915,6 +935,30 @@
                     window['freqAjax-' + itemValue + '-' + cmd] = function () {
                         window['reqAjax-' + itemValue + '-' + cmd] = $.ajax({
                             url: "<?= site_url('mt_others/form_billing') ?>/" + itemValue + "/" + cmd,
+                            success: function (data) {
+                                var d = new Date();
+                                var cdx = d.getDate() + '/' + eval(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+                                $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-body').html(data);
+                                $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-tools .updated-at').html('section at: ' + cdx);
+                            },
+                            error: function (xhr) {
+                                var d = new Date();
+                                var cdx = d.getDate() + '/' + eval(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+                                console.log(xhr);
+                                var msgError = 'Request Status: ' + xhr.status + ' Status Text: ' + xhr.statusText + ' ' + xhr.responseText;
+                                alert(msgError);
+                                $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-body').html(msgError);
+                                $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-tools .updated-at').html('section at: ' + cdx);
+                            }
+                        });
+                    }
+                    window['freqAjax-' + itemValue + '-' + cmd]();
+                    break;
+                case 'menu-form-billing-n-report':
+                    $('#mikrostator-box-' + itemValue + '-' + cmd + ' .box-body').html(loadingBar);
+                    window['freqAjax-' + itemValue + '-' + cmd] = function () {
+                        window['reqAjax-' + itemValue + '-' + cmd] = $.ajax({
+                            url: "<?= site_url('mt_others/form_billing_n_report') ?>/" + itemValue + "/" + cmd,
                             success: function (data) {
                                 var d = new Date();
                                 var cdx = d.getDate() + '/' + eval(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();

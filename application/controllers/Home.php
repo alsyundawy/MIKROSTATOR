@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Home extends MY_Controller {
+class Home extends Admin_Controller {
 
     public function __construct() {
         parent::__construct();
@@ -98,6 +98,8 @@ class Home extends MY_Controller {
         // echo json_encode($result);
     }
 
+
+    //dengan database sql.begin
     public function is_security_mikrotik() {
         $id = $this->input->post('id');
 
@@ -218,6 +220,181 @@ class Home extends MY_Controller {
         }
         echo json_encode($result, JSON_PRETTY_PRINT);
     }
+    //dengan database sql.end
+
+    
+    //dengan database file json.begin
+    
+    public function get_session_logins_from_file() {
+        $myfile = file_get_contents($this->rich_model->mikrostator_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            $array = [];
+            foreach($myfile as $key => $val) {
+                $arr['id'] = $key;
+                $arr['ext_id'] = $val['id'];
+                $arr['mikrotik_name'] = $val['mikrotik_name'];
+                // $arr['mikrotik_host'] = $val['mikrotik_host'];
+                // $arr['mikrotik_port'] = $val['mikrotik_port'];
+                // $arr['mikrotik_username'] = $val['mikrotik_username'];
+                // $arr['mikrotik_password'] = $val['mikrotik_password'];
+                // $arr['pin'] = $val['pin'];
+                array_push($array, $arr);
+            }
+
+            if(count($array) > 0){
+                $result['ok'] = true;
+                $result['msg'] = $array;
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = "no data";
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    }
+
+    public function get_session_login_by_id_from_file() {
+        $id = $this->input->post('id');
+
+        $myfile = file_get_contents($this->rich_model->mikrostator_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            if(count($myfile) > 0) {
+                $myfile = $myfile[$id];
+                $array = $myfile;
+                if (count($array) > 0) {
+                    $result['ok'] = true;
+                    $result['msg'] = $array;
+                } else {
+                    $result['ok'] = false;
+                    $result['msg'] = 'no data';
+                }
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = 'no data';
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    }
+
+    public function is_security_mikrotik_from_file() {
+        $id = $this->input->post('id');
+
+        $myfile = file_get_contents($this->rich_model->mikrostator_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            $myfile = $myfile[$id];
+            $array = $myfile;
+            if (count($array) > 0) {
+                $result['ok'] = true;
+                if($array['pin'] != "") {
+                    $result['msg'] = 'pin';
+                } else {
+                    $result['msg'] = 'nopin';
+                }
+                    
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = 'no data';
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    }
+
+    public function check_security_mikrotik_from_file() {
+        $id = $this->input->post('id');
+        $pin = $this->input->post('pin');
+
+        $myfile = file_get_contents($this->rich_model->mikrostator_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            $myfile = $myfile[$id];
+            if($myfile['pin'] != $pin){
+                $result['ok'] = false;
+                $result['msg'] = 'Invalid PIN.';
+            } else {
+                $array = $myfile;
+                if (count($array) > 0) {
+                    $result['ok'] = true;
+                    $result['msg'] = $array;
+                } else {
+                    $result['ok'] = false;
+                    $result['msg'] = 'no data';
+                }
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    }
+
+    public function save_session_to_file() {
+        $data['id'] = date('YmdHis');
+        $data['mikrotik_name'] = $this->input->post('mikrotik_name');
+        $data['mikrotik_host'] = $this->input->post('mikrotik_host');
+        $data['mikrotik_port'] = $this->input->post('mikrotik_port');
+        $data['mikrotik_username'] = $this->input->post('mikrotik_username');
+        $data['mikrotik_password'] = $this->input->post('mikrotik_password');
+        $data['pin'] = $this->input->post('security_pin');
+        $myfile = file_get_contents($this->rich_model->mikrostator_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            if(array($myfile) > 0) {
+                array_push($myfile, $data);
+            } else {
+                $myfile = [];
+                array_push($myfile, $data);
+            }
+            if (file_put_contents($this->rich_model->mikrostator_file_db(), json_encode($myfile))) {
+                $result['ok'] = true;
+                $result['msg'] = 'Saved.';
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = 'Failed to save session. Maybe file permission issue.';
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        echo json_encode($result);
+    }
+
+    public function del_session_list_by_id_from_file() {
+        $id = $this->input->post('id');
+
+        $myfile = file_get_contents($this->rich_model->mikrostator_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            unset($myfile[$id]);
+            $array = $myfile;
+            // print_r($array);exit(0);
+            if (file_put_contents($this->rich_model->mikrostator_file_db(), json_encode($array))) {
+                $result['ok'] = true;
+                $result['msg'] = 'Mikrotik deleted.';
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = 'Fail deleting Mikrotik. Maybe file permission issue.';
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    }
+    //dengan database file json.end
+
 
     public function sessions() {
        return $this->rich_model->get_sessions();
@@ -315,6 +492,90 @@ class Home extends MY_Controller {
         </script>
         <?php
     }
+
+
+    //user login.begin
+    public function modal_user_login_config($session_id, $msid = "") {
+        $myfile = file_get_contents($this->rich_model->user_login_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            $array = [];
+            foreach($myfile as $key => $val) {
+                $arr['username'] = $val['username'];
+                $arr['password'] = $val['password'];
+                array_push($array, $arr);
+            }
+            // print_r($array);
+        ?>
+            <div class="notifikasi"></div>
+            <form>
+                <div class="form-group">
+                    <label>User Login:</label>
+                    <textarea id="input_user_login_config" class="form-control" rows="15"><?= isset($array) ? json_encode($array, JSON_PRETTY_PRINT) : '' ?></textarea>
+                    <small class="help-block" id="help-session-list"><i class="fa fa-info-circle"></i> don't use enter.</small>
+                </div>
+            </form>
+        <?php
+        } else {
+            ?>
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h4><i class="icon fa fa-ban"></i> Fail to load DB. Maybe file permission issue.</h4>                    
+            </div>
+            <?php
+        }
+    }
+
+    public function get_user_login_from_file() {
+        $myfile = file_get_contents($this->rich_model->user_login_file_db());
+        if($myfile) {
+            $myfile = json_decode($myfile, true);
+            $array = [];
+            foreach($myfile as $key => $val) {
+                $arr['username'] = $val['username'];
+                $arr['password'] = $val['password'];
+                array_push($array, $arr);
+            }
+
+            if(count($array) > 0){
+                $result['ok'] = true;
+                $result['msg'] = $array;
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = "no data";
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        
+        echo json_encode($result, JSON_PRETTY_PRINT);
+    }
+    public function save_user_login_to_file() {
+        $data['input_user_login_config'] = $this->input->post('input_user_login_config');
+        $myfile = file_get_contents($this->rich_model->user_login_file_db());
+        if($myfile) {
+            // $myfile = json_decode($myfile, true);
+            // if(array($myfile) > 0) {
+            //     array_push($myfile, $data);
+            // } else {
+            //     $myfile = [];
+            //     array_push($myfile, $data);
+            // }
+            if (file_put_contents($this->rich_model->user_login_file_db(), $data['input_user_login_config'])) {
+                $result['ok'] = true;
+                $result['msg'] = 'Saved.';
+            } else {
+                $result['ok'] = false;
+                $result['msg'] = 'Failed to save session. Maybe file permission issue.';
+            }
+        } else {
+            $result['ok'] = false;
+            $result['msg'] = 'Fail to load DB. Maybe file permission issue.';            
+        }
+        echo json_encode($result);
+    }
+    //user login.end
 
     /*
      * *******************************
